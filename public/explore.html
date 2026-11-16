@@ -49,7 +49,7 @@
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
     <link rel="stylesheet" href="/css/style.css?v=20">
     <link rel="stylesheet" href="/css/nav.css?v=20">
-    <link rel="stylesheet" href="/css/explore.css?v=20">
+    <link rel="stylesheet" href="/css/explore.css?v=21">
 </head>
 
 <body class="page-explore">
@@ -145,7 +145,23 @@
             <div class="search-suggestions recent-searches" id="recentSearches"></div>
         </div>
         <section class="controls-section" id="intelligence">
-            <div class="filter-groups">
+            <div class="filter-bar">
+                <button type="button" class="filter-toggle" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">
+                    <i class="ph ph-funnel-simple"></i><span data-tr>Filters</span><span class="filter-count" id="filterCount" hidden></span>
+                </button>
+            </div>
+            <p class="focus-note" id="focusNote" hidden></p>
+            <p class="results-meta" id="resultsMeta"></p>
+            <div class="related-box" id="relatedBox" hidden></div>
+        </section>
+
+        <div class="explore-layout">
+            <aside class="filter-panel" id="filterPanel" data-tr-aria aria-label="Filters">
+                <div class="filter-head">
+                    <h2 data-tr>Filters</h2>
+                    <button type="button" class="filter-close" id="filterClose" data-tr-aria aria-label="Close filters"><i class="ph ph-x"></i></button>
+                </div>
+                <div class="filter-groups">
                 <div class="filter-row">
                     <span class="filter-label" data-tr>Topic</span>
                     <div class="filters" id="filterContainer">
@@ -192,12 +208,14 @@
                     </div>
                 </div>
             </div>
-            <p class="focus-note" id="focusNote" hidden></p>
-            <p class="results-meta" id="resultsMeta"></p>
-            <div class="related-box" id="relatedBox" hidden></div>
-        </section>
-        <section class="flex-grid news-grid" id="newsGrid" aria-live="polite"></section>
-        <nav class="pagination" id="pagination" data-tr-aria aria-label="Pagination" hidden></nav>
+                <button type="button" class="filter-apply" id="filterApply" data-tr>Show results</button>
+            </aside>
+            <div class="explore-results">
+                <section class="flex-grid news-grid" id="newsGrid" aria-live="polite"></section>
+            <nav class="pagination" id="pagination" data-tr-aria aria-label="Pagination" hidden></nav>
+            </div>
+        </div>
+        <div class="filter-scrim" id="filterScrim"></div>
     </main>
 
 <footer class="site-footer">
@@ -252,9 +270,10 @@
                 language.</span>
         </div>
     </footer>
-    <script defer src="/javascript/i18n.js?v=20"></script>
+    <script defer src="/javascript/i18n.js?v=21"></script>
     <script defer src="/javascript/common.js?v=20"></script>
     <script defer src="/javascript/script.js?v=20"></script>
+    <script defer src="/javascript/explore-filters.js?v=21"></script>
 </body>
 
 </html>
