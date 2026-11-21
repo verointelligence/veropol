@@ -1,0 +1,91 @@
+:root {
+    --bd-a: rgba(18, 18, 20, 0.045);
+    --bd-b: rgba(217, 67, 26, 0.055);
+    --bd-c: rgba(18, 18, 20, 0.06);
+    --bd-line: rgba(217, 67, 26, 0.32);
+    --bd-grid: rgba(18, 18, 20, 0.045);
+}
+
+:root[data-theme="dark"] {
+    --bd-a: rgba(255, 255, 255, 0.032);
+    --bd-b: rgba(255, 106, 61, 0.05);
+    --bd-c: rgba(255, 255, 255, 0.045);
+    --bd-line: rgba(255, 106, 61, 0.34);
+    --bd-grid: rgba(255, 255, 255, 0.035);
+}
+
+body::before {
+    display: none;
+}
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.bd-shapes {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.bd-a {
+    fill: var(--bd-a);
+}
+
+.bd-b {
+    fill: var(--bd-b);
+}
+
+.bd-c {
+    fill: var(--bd-c);
+}
+
+.bd-line,
+.bd-v {
+    fill: none;
+    stroke: var(--bd-line);
+    vector-effect: non-scaling-stroke;
+}
+
+.bd-line {
+    stroke-width: 1;
+}
+
+.bd-v {
+    stroke-width: 1.6;
+    stroke-linejoin: miter;
+}
+
+.bd-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--bd-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--bd-grid) 1px, transparent 1px);
+    background-size: 72px 72px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 22%, #000 0%, transparent 100%);
+    mask-image: radial-gradient(ellipse 70% 55% at 50% 22%, #000 0%, transparent 100%);
+}
+
+.bd-glow {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(640px 460px at 92% -6%, var(--accent-soft), transparent 68%),
+        radial-gradient(520px 420px at -4% 104%, var(--accent-soft), transparent 70%);
+}
+
+@media (max-width: 720px) {
+    .bd-grid {
+        background-size: 56px 56px;
+    }
+
+    .bd-v {
+        stroke-width: 1.2;
+    }
+}

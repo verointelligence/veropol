@@ -1,11 +1,16 @@
 import Script from 'next/script';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+import Backdrop from '@/components/Backdrop';
 import { CONTACT_EMAIL, GA_ID, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from '@/lib/site';
 import './css/style.css';
 import './css/nav.css';
 import './css/home.css';
+import './css/live.css';
+import './css/explore.css';
 import './css/pages.css';
+import './css/report.css';
+import './css/background.css';
 
 export const metadata = {
     metadataBase: new URL(SITE_URL),
@@ -81,6 +86,7 @@ export default function RootLayout({ children }) {
                 <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1" />
             </head>
             <body>
+                <Backdrop />
                 <div className="toast-box" id="toastBox" role="status" />
                 <Nav />
                 {children}

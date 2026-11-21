@@ -1,13 +1,41 @@
 import Link from 'next/link';
 import HomeSearch from '@/components/HomeSearch';
+import ReportCard from '@/components/ReportCard';
+import { THEATERS } from '@/content/theaters';
+import { timeAgo } from '@/lib/format';
+import { getEngine } from '@/lib/news/engine';
+import { ingest, latestReports } from '@/lib/reports';
+import { reportSlug } from '@/lib/slug';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
     alternates: { canonical: '/' }
 };
 
+function withTimeout(promise, ms, fallback) {
+    return Promise.race([promise.catch(() => fallback), new Promise(resolve => setTimeout(() => resolve(fallback), ms))]);
+}
+
+async function loadPreview() {
+    const data = await getEngine().theaters();
+    return Object.entries(data.theaters)
+        .filter(([, t]) => t && t.lead)
+        .map(([id, t]) => ({ id, lead: t.lead }))
+        .sort((a, b) => new Date(b.lead.publishedAt) - new Date(a.lead.publishedAt))
+        .slice(0, 4);
+}
+
 const CHIPS = ['Taiwan Strait', 'Donald Trump', 'BRICS'];
 
-export default function HomePage() {
+export default async function HomePage() {
+    const rows = await withTimeout(loadPreview(), 1500, []);
+    const overviews = new Map();
+    await Promise.all(rows.map(async row => {
+        const map = await ingest([row.lead], { theater: row.id, warm: 1 }).catch(() => new Map());
+        map.forEach((v, k) => overviews.set(k, v));
+    }));
+    const latest = await withTimeout(latestReports(6), 2500, []);
     return (
         <div className="page-home">
             <header className="home-hero">
@@ -30,10 +58,18 @@ export default function HomePage() {
                                 <Link href="/live" className="pv-more" aria-label="Open Live"><i className="ph ph-arrow-up-right" /></Link>
                             </div>
                             <ul className="pv-list" id="previewList">
-                                <li className="pv-skel" />
-                                <li className="pv-skel" />
-                                <li className="pv-skel" />
-                                <li className="pv-skel" />
+                                {rows.length ? rows.map(row => {
+                                    const overview = overviews.get(reportSlug(row.lead.title, row.lead.url));
+                                    return (
+                                        <li key={row.id}>
+                                            <Link className="pv-item" href={'/report/' + reportSlug(row.lead.title, row.lead.url)} prefetch={false}>
+                                                <span className="pv-tag">{THEATERS[row.id].title}</span>
+                                                <span className="pv-title" dir="auto">{overview ? overview.title : row.lead.title}</span>
+                                                <span className="pv-meta">{row.lead.source} &middot; {timeAgo(row.lead.publishedAt)}</span>
+                                            </Link>
+                                        </li>
+                                    );
+                                }) : [0, 1, 2, 3].map(i => <li key={i} className="pv-skel" />)}
                             </ul>
                         </div>
                         <div className="pv-card pv-float pv-a"><i className="ph ph-compass" /><div><b>Explore</b><small>Live search</small></div></div>
@@ -59,6 +95,23 @@ export default function HomePage() {
                 </div>
             </header>
             <main className="container home-main">
+                {latest.length ? (
+                    <section className="home-latest" id="latest">
+                        <div className="home-latest-head">
+                            <h2>Latest VERO overviews</h2>
+                            <Link href="/live" className="btn-ghost"><i className="ph ph-broadcast" /> <span>See Live</span></Link>
+                        </div>
+                        <div className="flex-grid news-grid">
+                            {latest.map(d => (
+                                <ReportCard
+                                    key={d.slug}
+                                    item={{ title: d.title, description: d.description, url: d.url, image: d.image, publishedAt: d.publishedAt, source: d.source, cat: d.category }}
+                                    overview={{ title: d.overview.title, summary: d.overview.summary }}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                ) : null}
                 <section className="articles-cta" id="writers">
                     <div className="cta-copy">
                         <h2>Have analysis the world should read?</h2>

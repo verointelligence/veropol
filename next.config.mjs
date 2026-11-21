@@ -9,6 +9,7 @@ const securityHeaders = [
 const nextConfig = {
     poweredByHeader: false,
     reactStrictMode: true,
+    serverExternalPackages: ['mongoose'],
     async headers() {
         return [{ source: '/:path*', headers: securityHeaders }];
     }
