@@ -10,7 +10,7 @@ export default function Footer() {
             <div className="footer-grid">
                 <div className="footer-brand">
                     <div className="brand-line">
-                        <img src="/assets/logo-192.webp" width="44" height="44" alt="VERO" className="brand-logo" />
+                        <img src="/assets/logo-192.webp" width="44" height="44" alt="VERO" className="brand-logo" data-vl="1" />
                         <span>VERO</span>
                     </div>
                     <p>Independent global intelligence and diplomatic monitoring observatory.</p>
@@ -20,6 +20,7 @@ export default function Footer() {
                     <Link href="/live"><i className="ph ph-broadcast" /> <span>Live</span></Link>
                     <Link href="/explore"><i className="ph ph-compass" /> <span>Explore</span></Link>
                     <Link href="/articles"><i className="ph ph-newspaper" /> <span>Articles</span></Link>
+                    <Link href="/articles/new"><i className="ph ph-pen-nib" /> <span>Write for VERO</span></Link>
                 </div>
                 <div className="footer-col">
                     <h4>Transparency</h4>

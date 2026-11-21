@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import ReportCard from '@/components/ReportCard';
 import { THEATERS, isTheater } from '@/content/theaters';
 import { CATEGORIES, clip, formatDate, jsonLd, proxied, timeAgo, validCover } from '@/lib/format';
+import { dbReady } from '@/lib/db';
 import { getEngine } from '@/lib/news/engine';
 import { getReport, queueOverview, relatedReports } from '@/lib/reports';
 import { isReportSlug } from '@/lib/slug';
@@ -48,6 +49,22 @@ async function coverFor(doc) {
 export default async function ReportPage({ params }) {
     const { slug } = await params;
     if (!isReportSlug(slug)) notFound();
+    if (!(await dbReady())) {
+        return (
+            <div className="page-report">
+                <main className="report-page">
+                    <div className="report-pending">
+                        <i className="ph ph-plugs" />
+                        <div>
+                            <b>This report is temporarily unavailable.</b>
+                            <p>Please try again in a minute.</p>
+                        </div>
+                    </div>
+                    <Link href="/live" className="btn-ghost"><i className="ph ph-broadcast" /> <span>Back to Live</span></Link>
+                </main>
+            </div>
+        );
+    }
     const doc = await getReport(slug);
     if (!doc) notFound();
     const overview = readyOverview(doc);

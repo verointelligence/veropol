@@ -5,12 +5,21 @@ import { reportSlug } from '@/lib/slug';
 
 const TAGS = { breaking: 'Breaking news', new: 'New', latest: 'Latest' };
 
-function LiveBox({ data, overview }) {
+function liveStats(data) {
+    const count = data ? data.count24h || 0 : 0;
+    const sources = data ? data.sources24h || 0 : 0;
+    return [
+        { label: 'Reports (24h)', value: String(count), tone: count >= 30 ? 'alert' : count >= 10 ? 'warning' : '' },
+        { label: 'Sources (24h)', value: String(sources), tone: '' }
+    ];
+}
+
+function LiveBox({ data, overview, linkable }) {
     if (!data || !data.lead) return null;
     const lead = data.lead;
     const title = overview ? overview.title : lead.title;
-    return (
-        <Link className="theater-live" href={'/report/' + reportSlug(lead.title, lead.url)} prefetch={false}>
+    const inner = (
+        <>
             <div className="live-head">
                 <span className={'live-tag ' + data.tag}>{TAGS[data.tag] || 'Latest'}</span>
                 <span className="live-time">{timeAgo(lead.publishedAt)}</span>
@@ -18,12 +27,16 @@ function LiveBox({ data, overview }) {
             <span className="live-title" dir="auto">{title}</span>
             <div className="live-foot">
                 <span>{lead.source || ''}</span>
-                <span className="go">Read overview <i className="ph ph-arrow-up-right" /></span>
+                <span className="go">{linkable ? 'Read overview' : 'Read source'} <i className="ph ph-arrow-up-right" /></span>
             </div>
-            <div className="live-meta">
-                <span>Reports (24h): <b>{data.count24h}</b></span>
-                <span>Sources: <b>{data.sources24h}</b></span>
-            </div>
+        </>
+    );
+    if (!linkable) {
+        return <a className="theater-live" href={lead.url} target="_blank" rel="noopener noreferrer">{inner}</a>;
+    }
+    return (
+        <Link className="theater-live" href={'/report/' + reportSlug(lead.title, lead.url)} prefetch={false}>
+            {inner}
         </Link>
     );
 }
@@ -40,7 +53,7 @@ function Cover({ className, cover, children }) {
     );
 }
 
-export function TheaterCard({ id, data, overview }) {
+export function TheaterCard({ id, data, overview, linkable = true }) {
     const t = THEATERS[id];
     if (!t) return null;
     const cover = data && data.cover ? data.cover : null;
@@ -54,14 +67,14 @@ export function TheaterCard({ id, data, overview }) {
                 <span className="theater-overview-label">VERO Overview</span>
                 <p className="theater-desc">{t.desc}</p>
                 <div className="theater-stats">
-                    {t.stats.map(stat => (
+                    {liveStats(data).map(stat => (
                         <div className="stat-box" key={stat.label}>
                             <span className="stat-label">{stat.label}</span>
                             <span className={'stat-val' + (stat.tone ? ' ' + stat.tone : '')}>{stat.value}</span>
                         </div>
                     ))}
                 </div>
-                <LiveBox data={data} overview={overview} />
+                <LiveBox data={data} overview={overview} linkable={linkable} />
                 <div className="theater-actions">
                     <Link href={'/explore?q=' + encodeURIComponent(t.query)} className="btn-theater-action" prefetch={false}>
                         <i className="ph ph-arrows-clockwise" /> Explore reports
@@ -75,7 +88,7 @@ export function TheaterCard({ id, data, overview }) {
     );
 }
 
-export function DevelopingCard({ card, overview }) {
+export function DevelopingCard({ card, overview, linkable = true }) {
     const data = { lead: card.lead, tag: card.tag, count24h: card.count24h, sources24h: card.sources24h };
     const cover = card.cover || null;
     return (
@@ -86,7 +99,7 @@ export function DevelopingCard({ card, overview }) {
             <div className="theater-info">
                 <h3 dir="auto">{card.title}</h3>
                 <span className="theater-overview-label">Gaining coverage</span>
-                <LiveBox data={data} overview={overview} />
+                <LiveBox data={data} overview={overview} linkable={linkable} />
                 <div className="theater-actions">
                     <Link href={'/explore?q=' + encodeURIComponent(card.query || card.title)} className="btn-theater-action" prefetch={false}>
                         <i className="ph ph-arrows-clockwise" /> Explore reports

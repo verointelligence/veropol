@@ -3,10 +3,10 @@ import CoverImage from '@/components/CoverImage';
 import { CATEGORIES, clip, formatDate, proxied, validCover } from '@/lib/format';
 import { reportSlug } from '@/lib/slug';
 
-export default function ReportCard({ item, overview, eager = false }) {
+export default function ReportCard({ item, overview, eager = false, linkable = true }) {
     const cat = CATEGORIES[item.cat] || CATEGORIES.intel;
     const image = validCover(item.image) ? proxied(item.image) : null;
-    const stored = !item.web;
+    const stored = !item.web && linkable;
     const title = overview ? overview.title : item.title;
     const description = overview
         ? clip(overview.summary, 170)

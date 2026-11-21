@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test tests/auth-core.test.mjs tests/news-core.test.mjs"
+    "test": "node --test tests/auth-core.test.mjs tests/news-core.test.mjs tests/auth-service.test.mjs tests/articles-core.test.mjs"
   },
   "engines": {
     "node": ">=20.9.0"

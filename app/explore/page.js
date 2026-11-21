@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
+import AutoRefresh from '@/components/AutoRefresh';
 import FilterDrawer from '@/components/FilterDrawer';
 import Pagination from '@/components/Pagination';
 import ReportCard from '@/components/ReportCard';
 import { CATEGORIES, RANGES, REGION_KEYS, TOPIC_KEYS } from '@/lib/format';
+import { dbReady } from '@/lib/db';
+import sources from '@/lib/news/sources.cjs';
 import { getEngine } from '@/lib/news/engine';
 import { clientIp, createLimiter } from '@/lib/rate-limit';
 import { ingest } from '@/lib/reports';
@@ -68,7 +71,8 @@ export default async function ExplorePage({ searchParams }) {
         }
     }
     const articles = result ? result.articles : [];
-    const overviews = articles.length ? await ingest(articles, { warm: 0 }).catch(() => new Map()) : new Map();
+    const linkable = await dbReady();
+    const overviews = articles.length && linkable ? await ingest(articles, { warm: 0 }).catch(() => new Map()) : new Map();
     const total = result ? result.total : 0;
     const start = total ? (result.page - 1) * PAGE_SIZE + 1 : 0;
     const end = total ? Math.min(result.page * PAGE_SIZE, total) : 0;
@@ -86,10 +90,11 @@ export default async function ExplorePage({ searchParams }) {
 
     return (
         <div className="page-explore">
+            <AutoRefresh seconds={300} />
             <main className="container explore-main">
                 <header className="page-head">
                     <h1>Explore</h1>
-                    <p>Search any region, leader or crisis across 18 vetted sources.</p>
+                    <p>{'Search any region, leader or crisis across ' + sources.TRUSTED_SOURCES.length + ' vetted sources.'}</p>
                 </header>
                 <div className="search-hero-container">
                     <form className="search-bar massive" action="/explore" method="get" role="search">
@@ -163,7 +168,7 @@ export default async function ExplorePage({ searchParams }) {
                         {articles.length ? (
                             <section className="flex-grid news-grid" id="newsGrid">
                                 {articles.map((item, i) => (
-                                    <ReportCard key={item.url} item={item} overview={overviews.get(reportSlug(item.title, item.url))} eager={i < 3} />
+                                    <ReportCard key={item.url} item={item} overview={overviews.get(reportSlug(item.title, item.url))} eager={i < 3} linkable={linkable} />
                                 ))}
                             </section>
                         ) : (

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DISCORD_URL } from '@/lib/site';
+import { apiFetch, hasSessionMarker } from '@/lib/client/api';
 
 const LINKS = [
     { href: '/live', label: 'Live' },
@@ -28,6 +28,7 @@ export default function Nav() {
     const [open, setOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [theme, setTheme] = useState(null);
+    const [signedIn, setSignedIn] = useState(false);
 
     const applyTheme = useCallback((next, persist) => {
         document.documentElement.setAttribute('data-theme', next);
@@ -72,6 +73,24 @@ export default function Nav() {
         setOpen(false);
     }, [pathname]);
 
+    useEffect(() => {
+        let cancelled = false;
+        if (!hasSessionMarker()) {
+            setSignedIn(false);
+            return undefined;
+        }
+        apiFetch('/api/me')
+            .then(result => {
+                if (!cancelled) setSignedIn(Boolean(result.ok && result.data && result.data.ok));
+            })
+            .catch(() => {
+                if (!cancelled) setSignedIn(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [pathname]);
+
     function toggleTheme() {
         const current = document.documentElement.getAttribute('data-theme');
         applyTheme(current === 'dark' ? 'light' : 'dark', true);
@@ -80,7 +99,7 @@ export default function Nav() {
     return (
         <nav className={'nav-container' + (scrolled ? ' scrolled' : '')} id="navbar">
             <Link href="/" className="brand" aria-label="VERO">
-                <img src="/assets/logo-96.webp" srcSet="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36" height="36" alt="VERO" className="brand-logo" />
+                <img src="/assets/logo-96.webp" srcSet="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36" height="36" alt="VERO" className="brand-logo" data-vl="1" />
                 <span>VERO</span>
             </Link>
             <div className={'nav-menu' + (open ? ' open' : '')} id="navMenu">
@@ -95,7 +114,12 @@ export default function Nav() {
                     })}
                 </div>
                 <div className="nav-tools" id="navTools">
-                    <a href={DISCORD_URL} className="btn-nav" target="_blank" rel="noopener noreferrer">Discord</a>
+                    <Link href={signedIn ? '/account' : '/login'} className={'icon-btn' + (signedIn ? ' signed' : '')} id="accountBtn" aria-label={signedIn ? 'Account' : 'Sign in'} onClick={() => setOpen(false)}>
+                        <svg className="user-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="8.2" r="3.7" />
+                            <path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2" />
+                        </svg>
+                    </Link>
                     <button id="themeToggle" className="theme-toggle-btn" type="button" aria-label="Toggle theme" onClick={toggleTheme}>
                         <i className={theme === 'dark' ? 'ph ph-sun' : 'ph ph-moon'} id="themeIcon" />
                     </button>

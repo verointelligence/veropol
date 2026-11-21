@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import HomeSearch from '@/components/HomeSearch';
+import LivePreview from '@/components/LivePreview';
 import ReportCard from '@/components/ReportCard';
-import { THEATERS } from '@/content/theaters';
-import { timeAgo } from '@/lib/format';
-import { getEngine } from '@/lib/news/engine';
-import { ingest, latestReports } from '@/lib/reports';
-import { reportSlug } from '@/lib/slug';
+import { dbReady } from '@/lib/db';
+import sources from '@/lib/news/sources.cjs';
+import { previewRows } from '@/lib/preview';
+import { latestReports } from '@/lib/reports';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,25 +17,12 @@ function withTimeout(promise, ms, fallback) {
     return Promise.race([promise.catch(() => fallback), new Promise(resolve => setTimeout(() => resolve(fallback), ms))]);
 }
 
-async function loadPreview() {
-    const data = await getEngine().theaters();
-    return Object.entries(data.theaters)
-        .filter(([, t]) => t && t.lead)
-        .map(([id, t]) => ({ id, lead: t.lead }))
-        .sort((a, b) => new Date(b.lead.publishedAt) - new Date(a.lead.publishedAt))
-        .slice(0, 4);
-}
-
 const CHIPS = ['Taiwan Strait', 'Donald Trump', 'BRICS'];
 
 export default async function HomePage() {
-    const rows = await withTimeout(loadPreview(), 1500, []);
-    const overviews = new Map();
-    await Promise.all(rows.map(async row => {
-        const map = await ingest([row.lead], { theater: row.id, warm: 1 }).catch(() => new Map());
-        map.forEach((v, k) => overviews.set(k, v));
-    }));
-    const latest = await withTimeout(latestReports(6), 2500, []);
+    const initial = await withTimeout(previewRows(4), 1500, []);
+    const latest = (await dbReady()) ? await withTimeout(latestReports(6), 2500, []) : [];
+    const sourceCount = sources.TRUSTED_SOURCES.length;
     return (
         <div className="page-home">
             <header className="home-hero">
@@ -57,23 +44,10 @@ export default async function HomePage() {
                                 <b>Live now</b>
                                 <Link href="/live" className="pv-more" aria-label="Open Live"><i className="ph ph-arrow-up-right" /></Link>
                             </div>
-                            <ul className="pv-list" id="previewList">
-                                {rows.length ? rows.map(row => {
-                                    const overview = overviews.get(reportSlug(row.lead.title, row.lead.url));
-                                    return (
-                                        <li key={row.id}>
-                                            <Link className="pv-item" href={'/report/' + reportSlug(row.lead.title, row.lead.url)} prefetch={false}>
-                                                <span className="pv-tag">{THEATERS[row.id].title}</span>
-                                                <span className="pv-title" dir="auto">{overview ? overview.title : row.lead.title}</span>
-                                                <span className="pv-meta">{row.lead.source} &middot; {timeAgo(row.lead.publishedAt)}</span>
-                                            </Link>
-                                        </li>
-                                    );
-                                }) : [0, 1, 2, 3].map(i => <li key={i} className="pv-skel" />)}
-                            </ul>
+                            <LivePreview initial={initial} />
                         </div>
                         <div className="pv-card pv-float pv-a"><i className="ph ph-compass" /><div><b>Explore</b><small>Live search</small></div></div>
-                        <div className="pv-card pv-float pv-b"><i className="ph ph-seal-check" /><div><b>Vetted sources</b><small>18</small></div></div>
+                        <div className="pv-card pv-float pv-b"><i className="ph ph-seal-check" /><div><b>Vetted sources</b><small>{sourceCount}</small></div></div>
                     </aside>
                 </div>
                 <div className="service-tiles">
@@ -84,7 +58,7 @@ export default async function HomePage() {
                     </Link>
                     <Link href="/explore" className="svc-tile">
                         <span className="svc-ico"><i className="ph ph-compass" /></span>
-                        <span className="svc-text"><b>Explore</b><small>Search 18 vetted sources.</small></span>
+                        <span className="svc-text"><b>Explore</b><small>{'Search ' + sourceCount + ' vetted sources.'}</small></span>
                         <i className="ph ph-arrow-up-right svc-go" />
                     </Link>
                     <Link href="/articles" className="svc-tile">
@@ -118,7 +92,7 @@ export default async function HomePage() {
                         <p>Publish signed articles on diplomacy, security and the global economy. Open to every verified member.</p>
                         <div className="cta-actions">
                             <Link href="/articles" className="btn-primary"><i className="ph ph-newspaper" /> <span>Read articles</span></Link>
-                            <Link href="/articles#write" className="btn-ghost"><i className="ph ph-pen-nib" /> <span>Write for VERO</span></Link>
+                            <Link href="/articles/new" className="btn-ghost"><i className="ph ph-pen-nib" /> <span>Write for VERO</span></Link>
                         </div>
                     </div>
                 </section>

@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import AutoRefresh from '@/components/AutoRefresh';
 import ReportCard from '@/components/ReportCard';
 import { THEATERS, isTheater } from '@/content/theaters';
+import { dbReady } from '@/lib/db';
 import { getEngine } from '@/lib/news/engine';
 import { ingest, theaterReports } from '@/lib/reports';
 import { reportSlug } from '@/lib/slug';
@@ -27,14 +29,21 @@ export default async function TheaterPage({ params }) {
     if (!isTheater(theater)) notFound();
     const t = THEATERS[theater];
     let articles = [];
+    let total = 0;
+    const linkable = await dbReady();
     try {
         const result = await getEngine().search({ q: t.query, category: 'all', range: '7d', page: 1, size: 12, uiLang: 'en', detect: false, client: null });
         articles = result.articles || [];
+        total = result.total || 0;
     } catch {
         articles = [];
     }
-    const overviews = await ingest(articles, { theater, warm: 3 }).catch(() => new Map());
-    const archive = await theaterReports(theater, 9);
+    const overviews = linkable ? await ingest(articles, { theater, warm: 3 }).catch(() => new Map()) : new Map();
+    const archive = linkable ? await theaterReports(theater, 9) : [];
+    const stats = [
+        { label: 'Reports (7d)', value: String(total), tone: total >= 60 ? 'alert' : total >= 20 ? 'warning' : '' },
+        { label: 'Sources', value: String(new Set(articles.map(a => a.source)).size), tone: '' }
+    ];
     const shown = new Set(articles.map(a => reportSlug(a.title, a.url)));
     const earlier = archive.filter(d => !shown.has(d.slug));
 
@@ -49,6 +58,7 @@ export default async function TheaterPage({ params }) {
 
     return (
         <div className="page-live">
+            <AutoRefresh seconds={300} />
             <main className="container live-main">
                 <nav className="crumbs" aria-label="Breadcrumb">
                     <Link href="/">Home</Link><span>/</span><Link href="/live">Live</Link><span>/</span><span aria-current="page">{t.title}</span>
@@ -58,7 +68,7 @@ export default async function TheaterPage({ params }) {
                     <h1>{t.title}</h1>
                     <p>{t.desc}</p>
                     <div className="theater-stats head-stats">
-                        {t.stats.map(stat => (
+                        {stats.map(stat => (
                             <div className="stat-box" key={stat.label}>
                                 <span className="stat-label">{stat.label}</span>
                                 <span className={'stat-val' + (stat.tone ? ' ' + stat.tone : '')}>{stat.value}</span>
@@ -78,7 +88,7 @@ export default async function TheaterPage({ params }) {
                     {articles.length ? (
                         <div className="flex-grid news-grid">
                             {articles.map((item, i) => (
-                                <ReportCard key={item.url} item={item} overview={overviews.get(reportSlug(item.title, item.url))} eager={i < 3} />
+                                <ReportCard key={item.url} item={item} overview={overviews.get(reportSlug(item.title, item.url))} eager={i < 3} linkable={linkable} />
                             ))}
                         </div>
                     ) : (

@@ -1,4 +1,5 @@
 import { THEATER_IDS } from '@/content/theaters';
+import { articleSlugs } from '@/lib/articles';
 import { indexableReports } from '@/lib/reports';
 import { LEGAL_UPDATED, SITE_URL } from '@/lib/site';
 
@@ -11,6 +12,7 @@ export default async function sitemap() {
         { url: SITE_URL + '/', lastModified: now, changeFrequency: 'hourly', priority: 1 },
         { url: SITE_URL + '/live', lastModified: now, changeFrequency: 'hourly', priority: 0.9 },
         { url: SITE_URL + '/explore', lastModified: now, changeFrequency: 'hourly', priority: 0.8 },
+        { url: SITE_URL + '/articles', lastModified: now, changeFrequency: 'daily', priority: 0.8 },
         { url: SITE_URL + '/methodology', lastModified: stamp, changeFrequency: 'monthly', priority: 0.5 },
         { url: SITE_URL + '/privacy', lastModified: stamp, changeFrequency: 'monthly', priority: 0.3 },
         { url: SITE_URL + '/terms', lastModified: stamp, changeFrequency: 'monthly', priority: 0.3 }
@@ -22,5 +24,11 @@ export default async function sitemap() {
         changeFrequency: 'weekly',
         priority: 0.6
     }));
-    return [...base, ...theaters, ...reports];
+    const articles = (await articleSlugs(2000)).map(d => ({
+        url: SITE_URL + '/articles/' + d.slug,
+        lastModified: new Date(d.updatedAt || d.createdAt),
+        changeFrequency: 'weekly',
+        priority: 0.7
+    }));
+    return [...base, ...theaters, ...reports, ...articles];
 }

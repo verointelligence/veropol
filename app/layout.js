@@ -10,6 +10,7 @@ import './css/live.css';
 import './css/explore.css';
 import './css/pages.css';
 import './css/report.css';
+import './css/forms.css';
 import './css/background.css';
 
 export const metadata = {
